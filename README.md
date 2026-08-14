@@ -25,10 +25,8 @@ vendor/myproject/
 ```
 
 > `vendor/` 下的用户工程被 `.gitignore` 忽略，不会提交。
->
-> ⚠️ 不要放工程自己的 `main()` / `main.cpp`——模拟器有自己的 main。
 
-### 2. 工程必须满足 3 个契约
+### 2. 工程必须满足
 
 | 契约 | 要求 |
 |---|---|
@@ -68,8 +66,8 @@ cd vendor/myproject/dist-web && python3 -m http.server 8123
 
 ## 工程没有 ui_init?
 
-交给 AI 处理：让它按 CLAUDE.md 的方法定位入口并包一层——签名不符（带参数）也一样，包一个
-`extern "C" void ui_init(void)` 调原来的。需要的话直接把这个工程目录指给它。
+交给 AI 处理：让它按 CLAUDE.md 的方法定位入口并包一层，包装一个
+`extern "C" void ui_init(void)` 调原来的接口。需要的话直接把你自定义的LVGL工程目录指给它。
 
 ---
 
@@ -110,18 +108,7 @@ emmake make -j$(nproc)
 
 ## 给 AI 的交接说明
 
-新会话直接看根目录 [CLAUDE.md](CLAUDE.md)(自动加载)，里面是架构 + 契约 + 构建命令 + 坑。
-也可以把这一段贴给 AI：
-
-```
-通用 LVGL→网页 模拟器仓库。我要部署 LVGL 工程到网页。
-- 外壳: src/main_web_generic.cpp(别改);页面壳: web/lvgl_shell.html
-- 一键构建: ./scripts/build_generic_web.sh <工程目录> <宽> <高> [--preload "…"]
-- 工程只需提供 extern "C" void ui_init(void);触摸/键盘已内置
-我的工程: <路径>(分辨率 <WxH>， LVGL <版本>)， 运行时读: <资源清单>
-请: 构建出 index.* → 起 http 服务 → 无头浏览器验证画面正常、Console 无报错 → 贴产物和命令。
-注意: 工程别 include 硬件 SDK;别编译它的 main.cpp。
-```
+AI新会话直接看 [CLAUDE.md](CLAUDE.md)(:p
 
 ---
 
@@ -141,15 +128,8 @@ LVGL timer(lv_timer_handler)每 16ms 驱动渲染 + 轮询输入设备
    键盘      → SDL 事件 → lv_sdl_keyboard 驱动
 ```
 
-核心代码就一个文件 [src/main_web_generic.cpp](src/main_web_generic.cpp)(约 90 行)。
+核心代码就一个文件 [src/main_web_generic.cpp](src/main_web_generic.cpp)。
 `emscripten_set_main_loop(main_loop, 0, 1)` 是浏览器版主循环，替代原生 `while(1)`。
-
----
-
-## Cardputer 模拟器(默认模式)
-
-`EMU_GENERIC_WEB` 默认 OFF，构建仓库原有的 M5CardputerZero 模拟器：`cmake .. && make`。
-与本 README 无关。
 
 ---
 
@@ -176,8 +156,7 @@ LVGL timer(lv_timer_handler)每 16ms 驱动渲染 + 轮询输入设备
 ```
 
 脚本会把静态文件 + `.nojekyll` 拷到目标分支的工作树并提交推送——
-**不污染 main 分支历史**（52MB 的 index.data 只存在于 gh-pages 分支）。重复执行是幂等的：
-文件没变化就不产生新 commit。
+
 
 ### 9.3 在 GitHub 网页开启 Pages
 
@@ -188,16 +167,8 @@ LVGL timer(lv_timer_handler)每 16ms 驱动渲染 + 轮询输入设备
 
 ```
 https://<owner>.github.io/<repo>/
-# 本仓库即 https://ZhangKeLiang0627.github.io/LVGL-Web-Emulator/
-# （仓库原名 Emulator 已重命名，旧地址会自动跳转）
+https://<owner>.github.io/<repo>/demo/
+
+# 即 https://ZhangKeLiang0627.github.io/LVGL-Web-Emulator/
+# 或 https://ZhangKeLiang0627.github.io/LVGL-Web-Emulator/demo/
 ```
-
-### 注意
-
-- **子路径没问题**：Pages 把网页挂在 `/repo/` 子路径下，本外壳的 wasm/data 都是相对路径加载，
-  已在子路径下验证可正常启动和交互（§8 的冒烟脚本可直接指向子路径验证）。
-- **首次打开会刷新一次**：pthread 需要 SharedArrayBuffer，GitHub Pages 默认不带 COOP/COEP 头，
-  `coi-serviceworker.js` 会在首访后拦截请求补头并自动刷新一次（控制台可见
-  "Reloading page to make use of updated COOP/COEP Service Worker"），之后正常。
-- **体积**：GitHub Pages 单文件上限 100MB，`index.data` 约 52MB（图片+精简字体），没问题。
-- **换机器/手机**：用浏览器直接访问上面的 URL 即可，无需 git。
