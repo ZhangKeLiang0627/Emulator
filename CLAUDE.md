@@ -11,7 +11,7 @@
 - **`web/lvgl_shell.html`**:页面壳(进度条 + 拦快捷键 + `coi-serviceworker.js` 补 COOP/COEP,
   让 pthread/SharedArrayBuffer 可用)。
 - **`lib/lvgl`** 子模块,当前 v9.5.0。
-- 工程统一放 `app/<名字>/`(`app/` 除 demo 外被 gitignore,不提交)。
+- 工程统一放 `vendor/<名字>/`(被 gitignore,不提交)。
 
 ## 契约
 

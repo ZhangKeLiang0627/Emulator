@@ -15,16 +15,16 @@
 
 ### 1. 工程放哪里
 
-统一放 `app/<工程名>/`，例如 `app/myproject/`:
+统一放 `vendor/<工程名>/`，例如 `vendor/myproject/`:
 
 ```
-app/myproject/
+vendor/myproject/
 ├── ui.c / ui.cpp ...   # 含 ui_init()，递归全量编译
 ├── images/             # 运行时读的图片(可选)
 └── fonts/              # 自定义字体(可选)
 ```
 
-> `app/` 下除 `app/demo/` 外都被 `.gitignore` 忽略，你的工程不会提交。
+> `vendor/` 下的用户工程被 `.gitignore` 忽略，不会提交。
 >
 > ⚠️ 不要放工程自己的 `main()` / `main.cpp`——模拟器有自己的 main。
 
@@ -39,12 +39,12 @@ app/myproject/
 ### 3. 构建 & 运行
 
 ```bash
-./scripts/build_generic_web.sh app/myproject 800 480 --preload "app/myproject/images@/images"
-cd app/myproject/dist-web && python3 -m http.server 8123
+./scripts/build_generic_web.sh vendor/myproject 800 480 --preload "vendor/myproject/images@/images"
+cd vendor/myproject/dist-web && python3 -m http.server 8123
 # 浏览器 http://localhost:8123/
 ```
 
-脚本自动找 emsdk(`$EMSDK` / `~/emsdk` / `/opt/emsdk`)，产物拷到 `app/<名字>/dist-web/`。
+脚本自动找 emsdk(`$EMSDK` / `~/emsdk` / `/opt/emsdk`)，产物拷到 `vendor/<名字>/dist-web/`。
 `index.data` 只有 `--preload` 了资源才生成。
 
 > 必须 http(s) 访问，`file://` 会白屏(pthread 需要 SharedArrayBuffer，页面自动补 COOP/COEP)。
@@ -61,7 +61,7 @@ cd app/myproject/dist-web && python3 -m http.server 8123
 否则读不到：
 
 ```bash
---preload "app/myproject/images@/images;app/myproject/fonts@/fonts"
+--preload "vendor/myproject/images@/images;vendor/myproject/fonts@/fonts"
 ```
 
 ---
@@ -79,10 +79,10 @@ cd app/myproject/dist-web && python3 -m http.server 8123
 mkdir -p build-myproject && cd build-myproject
 emcmake cmake .. \
     -DEMU_GENERIC_WEB=ON \
-    -DEMU_APP_UI_DIR=/abs/path/app/myproject \
+    -DEMU_APP_UI_DIR=/abs/path/vendor/myproject \
     -DEMU_LCD_W=800 -DEMU_LCD_H=480 \
-    -DEMU_PRELOAD="/abs/path/app/myproject/images@/images" \
-    -DEMU_APP_INCLUDE_DIRS="/abs/path/app/myproject"
+    -DEMU_PRELOAD="/abs/path/vendor/myproject/images@/images" \
+    -DEMU_APP_INCLUDE_DIRS="/abs/path/vendor/myproject"
 emmake make -j$(nproc)
 ```
 
