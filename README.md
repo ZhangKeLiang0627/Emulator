@@ -1,6 +1,6 @@
 # LVGL-Web-Emulator
 
-把任意 LVGL 工程编译成静态网页,浏览器直接跑,触摸/鼠标/键盘开箱即用。
+把任意 LVGL 工程编译成静态网页，浏览器直接跑，触摸/鼠标/键盘开箱即用。
 
 ## 用法速查
 
@@ -15,7 +15,7 @@
 
 ### 1. 工程放哪
 
-统一放 `app/<工程名>/`,例如 `app/myproject/`:
+统一放 `app/<工程名>/`，例如 `app/myproject/`:
 
 ```
 app/myproject/
@@ -24,16 +24,16 @@ app/myproject/
 └── fonts/              # 自定义字体(可选)
 ```
 
-> `app/` 下除 `app/demo/` 外都被 `.gitignore` 忽略,你的工程不会提交。
+> `app/` 下除 `app/demo/` 外都被 `.gitignore` 忽略，你的工程不会提交。
 > ⚠️ 不要放工程自己的 `main()` / `main.cpp`——模拟器有自己的 main。
 
 ### 2. 工程必须满足 3 个契约
 
 | 契约 | 要求 |
 |---|---|
-| ① `extern "C" void ui_init(void)` | 唯一入口,模拟器启动后只调它 |
+| ① `extern "C" void ui_init(void)` | 唯一入口，模拟器启动后只调它 |
 | ② 只用 LVGL API | 不 `#include` 硬件 SDK;硬件逻辑剥离 |
-| ③ 分辨率可指定 | 尺寸由构建参数传入,代码别写死 |
+| ③ 分辨率可指定 | 尺寸由构建参数传入，代码别写死 |
 
 ### 3. 构建 + 跑
 
@@ -43,33 +43,33 @@ cd app/myproject/dist-web && python3 -m http.server 8123
 # 浏览器 http://localhost:8123/
 ```
 
-脚本自动找 emsdk(`$EMSDK` / `~/emsdk` / `/opt/emsdk`),产物拷到 `app/<名字>/dist-web/`。
+脚本自动找 emsdk(`$EMSDK` / `~/emsdk` / `/opt/emsdk`)，产物拷到 `app/<名字>/dist-web/`。
 `index.data` 只有 `--preload` 了资源才生成。
 
-> 必须 http(s) 访问,`file://` 会白屏(pthread 需要 SharedArrayBuffer,页面自动补 COOP/COEP)。
+> 必须 http(s) 访问，`file://` 会白屏(pthread 需要 SharedArrayBuffer，页面自动补 COOP/COEP)。
 
 ### 4. 部署线上
 
-`dist-web/` 就是整个网站,拷到任意静态托管:GitHub Pages / nginx / 对象存储 / 局域网。
+`dist-web/` 就是整个网站，拷到任意静态托管:GitHub Pages / nginx / 对象存储 / 局域网。
 
 ---
 
 ## 运行时读文件(图片/字体/音频)
 
-`ui_init()` 里 `lv_image_set_src(img, "A:/images/logo.png")` 这类**运行时读文件**必须 `--preload`,
+`ui_init()` 里 `lv_image_set_src(img, "A:/images/logo.png")` 这类**运行时读文件**必须 `--preload`，
 否则读不到:
 
 ```bash
 --preload "app/myproject/images@/images;app/myproject/fonts@/fonts"
 ```
 
-`A:` 前缀 LVGL 忽略,实际路径 `/images/logo.png`。
+`A:` 前缀 LVGL 忽略，实际路径 `/images/logo.png`。
 
 ---
 
 ## 工程没有 ui_init?
 
-交给 AI 处理:让它按 CLAUDE.md 的方法定位入口并包一层——签名不符(带参数)也一样,包一个
+交给 AI 处理:让它按 CLAUDE.md 的方法定位入口并包一层——签名不符(带参数)也一样，包一个
 `extern "C" void ui_init(void)` 调原来的。需要的话直接把这个工程目录指给它。
 
 ---
@@ -95,7 +95,7 @@ emmake make -j$(nproc)
 | `-DEMU_PRELOAD` | 空 | `"src@/dest;…"` 打包进 wasm 文件系统 |
 | `-DEMU_APP_INCLUDE_DIRS` | 空 | 额外 include 目录(`;` 分隔) |
 
-换 LVGL 版本:`lib/lvgl` 子模块(当前 v9.5.0)。`git -C lib/lvgl checkout v9.x.y`,或改
+换 LVGL 版本:`lib/lvgl` 子模块(当前 v9.5.0)。`git -C lib/lvgl checkout v9.x.y`，或改
 `CMakeLists.txt` 的 `add_subdirectory(lib/lvgl)` 路径。⚠️ 工程 API 必须和编译进去的版本匹配。
 
 ---
@@ -104,17 +104,17 @@ emmake make -j$(nproc)
 
 | 问题 | 解法 |
 |---|---|
-| 白屏 | 用 `http://`,别用 `file://` |
+| 白屏 | 用 `http://`，别用 `file://` |
 | 资源读不到 | 加 `--preload`;`A:` 前缀会被忽略 |
 | `ui_init` 带参数/签名不符 | 包一层 `extern "C" void ui_init(void)` |
-| include 硬件 SDK | 剥离;SquareLine 工程只编 `ui/`,硬件在它的 `main.cpp`,别编译那个文件 |
-| 工程有 main 冲突 | 模拟器有自己的 main,别放进工程源码 |
+| include 硬件 SDK | 剥离;SquareLine 工程只编 `ui/`，硬件在它的 `main.cpp`，别编译那个文件 |
+| 工程有 main 冲突 | 模拟器有自己的 main，别放进工程源码 |
 
 ---
 
 ## 给 AI 的交接说明
 
-新会话直接看根目录 [CLAUDE.md](CLAUDE.md)(自动加载),里面是架构 + 契约 + 构建命令 + 坑。
+新会话直接看根目录 [CLAUDE.md](CLAUDE.md)(自动加载)，里面是架构 + 契约 + 构建命令 + 坑。
 也可以把这一段贴给 AI:
 
 ```
@@ -122,7 +122,7 @@ emmake make -j$(nproc)
 - 外壳: src/main_web_generic.cpp(别改);页面壳: web/lvgl_shell.html
 - 一键构建: ./scripts/build_generic_web.sh <工程目录> <宽> <高> [--preload "…"]
 - 工程只需提供 extern "C" void ui_init(void);触摸/键盘已内置
-我的工程: <路径>(分辨率 <WxH>, LVGL <版本>), 运行时读: <资源清单>
+我的工程: <路径>(分辨率 <WxH>， LVGL <版本>)， 运行时读: <资源清单>
 请: 构建出 index.* → 起 http 服务 → 无头浏览器验证画面正常、Console 无报错 → 贴产物和命令。
 注意: 工程别 include 硬件 SDK;别编译它的 main.cpp。
 ```
@@ -146,11 +146,11 @@ LVGL timer(lv_timer_handler)每 16ms 驱动渲染 + 轮询输入设备
 ```
 
 核心代码就一个文件 [src/main_web_generic.cpp](src/main_web_generic.cpp)(约 90 行)。
-`emscripten_set_main_loop(main_loop, 0, 1)` 是浏览器版主循环,替代原生 `while(1)`。
+`emscripten_set_main_loop(main_loop, 0, 1)` 是浏览器版主循环，替代原生 `while(1)`。
 
 ---
 
 ## Cardputer 模拟器(默认模式)
 
-`EMU_GENERIC_WEB` 默认 OFF,构建仓库原有的 M5CardputerZero 模拟器:`cmake .. && make`。
+`EMU_GENERIC_WEB` 默认 OFF，构建仓库原有的 M5CardputerZero 模拟器:`cmake .. && make`。
 与本 README 无关。
