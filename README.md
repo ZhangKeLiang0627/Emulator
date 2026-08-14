@@ -1,11 +1,6 @@
-# M5CardputerZero-Emulator
+# LVGL-Web-Emulator
 
-一个同时支持两件事的工程：
-
-1. **Cardputer 模拟器（默认）**——把 M5CardputerZero 固件（APPLaunch）跑在本机 / 网页。
-2. **通用 LVGL → Web 外壳（`EMU_GENERIC_WEB=ON`）**——把**任意** LVGL 显示工程编译成网页，支持触摸交互，分辨率任意。
-
-本 README 重点讲第 2 种：怎么把你的 LVGL 工程部署到网页、怎么快速构建、怎么交接给 AI。
+本 README 重点讲：怎么把你的 LVGL 工程部署到网页、怎么快速构建、怎么交接给 AI。
 
 ---
 
@@ -21,7 +16,7 @@
 | 契约 | 说明 |
 |---|---|
 | ① `extern "C" void ui_init(void)` | 唯一入口，模拟器只调用它（在你 UI 初始化代码里提供） |
-| ② 只用 LVGL API | 不能 `#include` M5 / 其它硬件 SDK；硬件相关逻辑要剥离 |
+| ② 只用 LVGL API | 不能 `#include` 其它硬件操作 SDK；硬件相关逻辑要剥离 |
 | ③ 分辨率可指定 | 通过 `EMU_LCD_W/H` 传入，代码里**不要写死**屏幕尺寸 |
 
 > LVGL 版本：默认用仓库里 `lib/lvgl` 子模块（v9.3.0 分支）。你可以自换版本（见 §4.4）。
