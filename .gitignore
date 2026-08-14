@@ -14,3 +14,4 @@ build-*/
 
 # User LVGL projects go here (untracked). The demo is tracked (see below).
 app/*
+demo/dist-web/
