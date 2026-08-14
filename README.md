@@ -154,3 +154,54 @@ LVGL timer(lv_timer_handler)每 16ms 驱动渲染 + 轮询输入设备
 
 `EMU_GENERIC_WEB` 默认 OFF，构建仓库原有的 M5CardputerZero 模拟器:`cmake .. && make`。
 与本 README 无关。
+
+---
+
+## 9. 部署到 GitHub Pages
+
+产物是纯静态文件，任何静态托管都能跑，GitHub Pages 也不例外。步骤：
+
+### 9.1 先构建
+
+跑 §8 的命令把网页构建出来（产物在 `app/guiproc/dist-web/`）。
+
+### 9.2 一键推到 gh-pages 分支
+
+```bash
+./scripts/deploy_gh_pages.sh                # 默认 app/guiproc/dist-web → origin/gh-pages
+# 或指定参数：./scripts/deploy_gh_pages.sh <dist-dir> <remote> <branch>
+```
+
+部署到子路径（比如想挂在 `/demo` 而不是根目录）时，用第 4 个参数指定子目录，分支名自定：
+
+```bash
+./scripts/deploy_gh_pages.sh build-generic-demo origin deploy/demo demo
+# 产物会放进 deploy/demo 分支的 demo/ 子目录，Pages 从分支根服务 → URL 为 /<repo>/demo/
+```
+
+脚本会把静态文件 + `.nojekyll` 拷到目标分支的工作树并提交推送——
+**不污染 main 分支历史**（52MB 的 index.data 只存在于 gh-pages 分支）。重复执行是幂等的：
+文件没变化就不产生新 commit。
+
+### 9.3 在 GitHub 网页开启 Pages
+
+仓库 → **Settings → Pages → Build and deployment → Source** 选
+`Deploy from a branch`，分支选 `gh-pages`，目录 `/ (root)`，保存。
+
+### 9.4 打开
+
+```
+https://<owner>.github.io/<repo>/
+# 本仓库即 https://ZhangKeLiang0627.github.io/LVGL-Web-Emulator/
+# （仓库原名 Emulator 已重命名，旧地址会自动跳转）
+```
+
+### 注意
+
+- **子路径没问题**：Pages 把网页挂在 `/repo/` 子路径下，本外壳的 wasm/data 都是相对路径加载，
+  已在子路径下验证可正常启动和交互（§8 的冒烟脚本可直接指向子路径验证）。
+- **首次打开会刷新一次**：pthread 需要 SharedArrayBuffer，GitHub Pages 默认不带 COOP/COEP 头，
+  `coi-serviceworker.js` 会在首访后拦截请求补头并自动刷新一次（控制台可见
+  "Reloading page to make use of updated COOP/COEP Service Worker"），之后正常。
+- **体积**：GitHub Pages 单文件上限 100MB，`index.data` 约 52MB（图片+精简字体），没问题。
+- **换机器/手机**：用浏览器直接访问上面的 URL 即可，无需 git。
