@@ -292,15 +292,15 @@ LVGL 在 Canvas 上绘制 GUI
 
 ---
 
-## 9. 部署到 GitHub Pages
+## 部署到 GitHub Pages
 
 产物是纯静态文件，任何静态托管都能跑，GitHub Pages 也不例外。步骤：
 
-### 9.1 先构建
+### 1. 先构建
 
 跑 §8 的命令把网页构建出来（产物在 `app/guiproc/dist-web/`）。
 
-### 9.2 一键推到 gh-pages 分支
+### 2. 一键推到 gh-pages 分支
 
 ```bash
 ./scripts/deploy_gh_pages.sh                # 默认 app/guiproc/dist-web → origin/gh-pages
@@ -317,12 +317,12 @@ LVGL 在 Canvas 上绘制 GUI
 脚本会把静态文件 + `.nojekyll` 拷到目标分支的工作树并提交推送。
 
 
-### 9.3 在 GitHub 网页开启 Pages
+### 3. 在 GitHub 网页开启 Pages
 
 仓库 → **Settings → Pages → Build and deployment → Source** 选
 `Deploy from a branch`，分支选 `gh-pages`，目录 `/ (root)`，保存。
 
-### 9.4 打开
+### 4. 打开网页
 
 ```
 https://<owner>.github.io/<repo>/
