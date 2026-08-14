@@ -25,6 +25,7 @@ app/myproject/
 ```
 
 > `app/` 下除 `app/demo/` 外都被 `.gitignore` 忽略，你的工程不会提交。
+>
 > ⚠️ 不要放工程自己的 `main()` / `main.cpp`——模拟器有自己的 main。
 
 ### 2. 工程必须满足 3 个契约
