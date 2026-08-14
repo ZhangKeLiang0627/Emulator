@@ -6,6 +6,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+# Generic LVGL → web shell (any project, any resolution, touch input).
+# ON replaces the Cardputer emulator web build with a bare LCD + pointer shell.
+# Config vars:
+#   EMU_LCD_W / EMU_LCD_H  — display resolution (default 1280x720)
+#   EMU_APP_UI_DIR         — dir globbed for the app's ui sources (needs ui_init)
+#   EMU_APP_INCLUDE_DIRS   — extra include dirs for the app (semicolon list)
+#   EMU_PRELOAD            — "src@/dest" file pairs preloaded into the wasm FS
+option(EMU_GENERIC_WEB "Build generic LVGL web shell instead of the Cardputer emulator" OFF)
+set(EMU_LCD_W "1280" CACHE STRING "Generic web shell: display width")
+set(EMU_LCD_H "720" CACHE STRING "Generic web shell: display height")
+set(EMU_APP_UI_DIR "" CACHE PATH "Generic web shell: dir containing the app's ui sources")
+set(EMU_APP_INCLUDE_DIRS "" CACHE STRING "Generic web shell: extra include dirs for the app")
+set(EMU_PRELOAD "" CACHE STRING "Generic web shell: 'src@/dest;...' preloaded into the wasm FS")
+
 # Paths
 set(VENDOR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/M5CardputerZero-Launcher)
 
@@ -372,8 +386,9 @@ endif() # NOT EMSCRIPTEN — end native targets
 
 # ---------------------------------------------------------------------------
 # Web (Emscripten) target — only built when using emcmake
+# (Cardputer-specific; disabled by EMU_GENERIC_WEB)
 # ---------------------------------------------------------------------------
-if(EMSCRIPTEN)
+if(EMSCRIPTEN AND NOT EMU_GENERIC_WEB)
     # App sources statically linked (no dlopen in wasm)
     # Reuse APPLAUNCH_UI_C / APPLAUNCH_UI_CPP / APPLAUNCH_KBD from launcher_sources.cmake
     add_executable(cardputer-emu-web
@@ -432,6 +447,62 @@ if(EMSCRIPTEN)
         COMMAND ${CMAKE_COMMAND} -E copy
             ${CMAKE_CURRENT_SOURCE_DIR}/web/coi-serviceworker.js
             $<TARGET_FILE_DIR:cardputer-emu-web>/coi-serviceworker.js
+        COMMENT "Copying coi-serviceworker.js"
+    )
+endif()
+
+# ---------------------------------------------------------------------------
+# Generic LVGL web shell — any project, any resolution, touch input.
+# ---------------------------------------------------------------------------
+if(EMSCRIPTEN AND EMU_GENERIC_WEB)
+    if(NOT EMU_APP_UI_DIR)
+        message(FATAL_ERROR "EMU_GENERIC_WEB=ON requires -DEMU_APP_UI_DIR=<dir> "
+            "containing the app's ui sources (which must define ui_init).")
+    endif()
+    file(GLOB_RECURSE _gen_ui_srcs
+        CONFIGURE_DEPENDS
+        ${EMU_APP_UI_DIR}/*.c ${EMU_APP_UI_DIR}/*.cpp)
+    if(NOT _gen_ui_srcs)
+        message(FATAL_ERROR "EMU_GENERIC_WEB: no .c/.cpp sources found in ${EMU_APP_UI_DIR}")
+    endif()
+
+    add_executable(lvgl-web
+        src/main_web_generic.cpp
+        ${_gen_ui_srcs}
+    )
+    target_include_directories(lvgl-web PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/lib   # for "lvgl/lvgl.h"
+        ${EMU_APP_INCLUDE_DIRS}
+    )
+    target_compile_definitions(lvgl-web PRIVATE
+        LCD_W=${EMU_LCD_W} LCD_H=${EMU_LCD_H})
+    target_compile_options(lvgl-web PRIVATE -DLV_USE_FREETYPE=0 -Wno-c++11-narrowing)
+    target_link_libraries(lvgl-web PRIVATE lvgl)
+
+    # -pthread is global for Emscripten (see top of file); keep it here so the
+    # objects' flags match at link time. SharedArrayBuffer is enabled, so the
+    # shell loads coi-serviceworker.js (COOP/COEP) like the Cardputer build.
+    target_link_options(lvgl-web PRIVATE
+        -sUSE_SDL=2
+        -pthread
+        -sPROXY_TO_PTHREAD=0
+        -sALLOW_MEMORY_GROWTH=1
+        -sINITIAL_MEMORY=67108864
+        --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/web/lvgl_shell.html
+    )
+    foreach(_f ${EMU_PRELOAD})
+        target_link_options(lvgl-web PRIVATE "--preload-file=${_f}")
+    endforeach()
+
+    set_target_properties(lvgl-web PROPERTIES
+        SUFFIX ".html"
+        OUTPUT_NAME "index"
+    )
+    add_custom_command(TARGET lvgl-web POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_CURRENT_SOURCE_DIR}/web/coi-serviceworker.js
+            $<TARGET_FILE_DIR:lvgl-web>/coi-serviceworker.js
         COMMENT "Copying coi-serviceworker.js"
     )
 endif()

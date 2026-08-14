@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- COOP/COEP so SharedArrayBuffer (pthreads) works on static hosting.
+     Must load before the wasm. Same as the Cardputer shell. -->
+<script src="coi-serviceworker.js"></script>
+<title>LVGL on the web</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #1a1a2e; display: flex; flex-direction: column;
+         align-items: center; justify-content: center; min-height: 100vh;
+         font-family: -apple-system, sans-serif; color: #eee; }
+  h1 { font-size: 15px; margin: 8px 0 4px; color: #888; }
+  canvas { display: block; border-radius: 8px; image-rendering: auto;
+           touch-action: none; }
+  /* fit canvas to viewport while keeping aspect ratio */
+  @media (max-width: 900px) { canvas { width: 100vw; height: auto; } }
+  #status { margin-top: 6px; font-size: 12px; color: #555; }
+  .spinner { display: inline-block; width: 12px; height: 12px;
+             border: 2px solid #444; border-top-color: #0af;
+             border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loader { width: 640px; max-width: 95vw; margin-top: 10px; }
+  #bar-track { width: 100%; height: 10px; background: #2a2a44;
+               border-radius: 5px; overflow: hidden; }
+  #bar-fill { width: 0%; height: 100%;
+              background: linear-gradient(90deg, #0af, #5cf);
+              transition: width 0.15s linear; }
+  #bar-text { margin-top: 6px; font-size: 12px; color: #9aa;
+              font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<h1>LVGL on the web</h1>
+<canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="0"></canvas>
+<script>
+  // Keep browser hotkeys (Tab/arrows/space/backspace) from hijacking input.
+  window.addEventListener('keydown', function(e) {
+    if ([37,38,39,40,32,9,8,27].indexOf(e.keyCode) !== -1) e.preventDefault();
+  }, {passive: false});
+</script>
+<div id="status"><span class="spinner"></span> Loading…</div>
+<div id="loader">
+  <div id="bar-track"><div id="bar-fill"></div></div>
+  <div id="bar-text">Preparing…</div>
+</div>
+<script>
+  (function () {
+    var statusEl = document.getElementById('status');
+    var fillEl   = document.getElementById('bar-fill');
+    var textEl   = document.getElementById('bar-text');
+    var t0 = (performance && performance.now) ? performance.now() : Date.now();
+    var firstBytes = null, firstTime = t0;
+
+    function human(b) {
+      if (b < 1024) return b + ' B';
+      if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+      return (b / 1048576).toFixed(2) + ' MB';
+    }
+
+    window.Module = {
+      canvas: document.getElementById('canvas'),
+      setStatus: function (text) {
+        var m = text && text.match(/\((\d+)\s*\/\s*(\d+)\)/);
+        if (m) {
+          var recv = parseInt(m[1], 10), total = parseInt(m[2], 10);
+          if (firstBytes === null) { firstBytes = recv; firstTime = (performance.now ? performance.now() : Date.now()); }
+          var now = (performance.now ? performance.now() : Date.now());
+          var secs = Math.max((now - firstTime) / 1000, 0.001);
+          var pct = total ? Math.min(100, recv / total * 100) : 0;
+          if (fillEl) fillEl.style.width = pct.toFixed(1) + '%';
+          if (textEl) textEl.textContent = pct.toFixed(1) + '%  ·  ' +
+            human(recv) + ' / ' + human(total);
+          statusEl.innerHTML = '<span class="spinner"></span> Loading…';
+        } else if (text) {
+          statusEl.innerHTML = '<span class="spinner"></span> ' + text;
+          if (textEl) textEl.textContent = '';
+        }
+      },
+      onRuntimeInitialized: function () {
+        statusEl.textContent = 'Ready. Touch / click to interact.';
+        var ld = document.getElementById('loader');
+        if (ld) ld.style.display = 'none';
+        document.getElementById('canvas').focus();
+      }
+    };
+  })();
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>
